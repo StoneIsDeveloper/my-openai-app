@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Chat with OpenAI</title>
+  <style>
+    body {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between; /* 使用空间之间分配 */
+        height: 100vh;
+        margin: 0;
+        font-family: Arial, sans-serif;
+    }
+
+    #chatOutput {
+        width: 80%; /* 设置聊天窗口宽度 */
+        max-width: 600px; /* 设置最大宽度 */
+        height: 80%; /* 设置聊天窗口高度占用80% */
+        overflow-y: auto;
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+    }
+
+    .user-message {
+        text-align: right;
+        color: blue;
+    }
+
+    .bot-message {
+        text-align: left;
+        color: green;
+    }
+
+    #loading {
+        display: none;
+    }
+
+    #input-container {
+        display: flex;
+        justify-content: center; /* 水平居中 */
+        width: 80%; /* 与聊天窗口相同的宽度 */
+        max-width: 600px; /* 设置最大宽度 */
+        margin-bottom: 50px; /* 增加底部间距 */
+    }
+
+    #userInput {
+        flex: 1; /* 让输入框自适应 */
+        padding: 10px; /* 内边距增加 */
+        font-size: 16px; /* 增加字体大小 */
+        margin-right: 10px; /* 和发送按钮之间的间隔 */
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    #sendBtn {
+        padding: 10px;
+        cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Chat with OpenAI</h1>
+  <div id="chatOutput"></div>
+  <div id="loading">正在加载...</div>
+  <div id="input-container">
+    <input type="text" id="userInput" placeholder="输入您的消息" />
+    <button id="sendBtn">发送</button>
+  </div>
+
+  <script>
+    document.getElementById('sendBtn').addEventListener('click', async () => {
+      const userInput = document.getElementById('userInput').value;
+      if (!userInput) return; // 如果没有输入，直接返回
+
+      // 添加用户消息到聊天记录
+      const chatOutput = document.getElementById('chatOutput');
+      chatOutput.innerHTML += `<p class="user-message"><strong>你:</strong> ${userInput}</p>`;
+      document.getElementById('userInput').value = ""; // 清空输入框
+
+      // 显示加载状态
+      document.getElementById('loading').style.display = 'block'; 
+
+      try {
+        const response = await fetch('/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: userInput })
+        });
+        const data = await response.json();
+        
+        // 添加AI返回的消息到聊天记录
+        if (data.output) {
+          chatOutput.innerHTML += `<p class="bot-message"><strong>AI:</strong> ${data.output}</p>`;
+        } else if (data.error) {
+          chatOutput.innerHTML += `<p><strong>错误:</strong> ${data.error}</p>`;
+        }
+      } catch (error) {
+        console.error("Error calling chat endpoint:", error);
+        chatOutput.innerHTML += `<p><strong>错误:</strong> 无法与服务器连接</p>`;
+      } finally {
+        // 隐藏加载状态
+        document.getElementById('loading').style.display = 'none'; 
+        chatOutput.scrollTop = chatOutput.scrollHeight; // 滚动到最新消息
+      }
+    });
+
+    // 支持回车键发送消息
+    document.getElementById('userInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        document.getElementById('sendBtn').click();
+      }
+    });
+  </script>
+</body>
+</html>
